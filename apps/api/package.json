@@ -23,6 +23,7 @@
     "bcrypt": "latest",
     "bullmq": "latest",
     "dotenv": "latest",
+    "ethers": "latest",
     "drizzle-orm": "latest",
     "fastify": "latest",
     "googleapis": "latest",

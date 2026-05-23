@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
-import { db } from "../../db";
-import { users } from "../../db/schema";
+import { db } from "../db";
+import { users } from "../db/schema";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
