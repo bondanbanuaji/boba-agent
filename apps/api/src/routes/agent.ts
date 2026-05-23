@@ -1,31 +1,31 @@
-import { FastifyInstance } from "fastify";
+import { Router, Request, Response } from "express";
 import { z } from "zod";
 
-export default async function agentRoutes(fastify: FastifyInstance) {
-  fastify.post("/execute", async (request, reply) => {
-    const executeSchema = z.object({
-      action: z.string(),
-      params: z.any().optional(),
-    });
+const router = Router();
 
-    try {
-      const { action, params } = executeSchema.parse(request.body);
-      
-      // Simulasi eksekusi aksi agen secara fungsional
-      return reply.code(200).send({
-        status: "success",
-        action,
-        result: `Executed action ${action} successfully.`,
-      });
-    } catch (error) {
-      return reply.code(400).send({ error: "Invalid agent command format" });
-    }
-  });
+const executeSchema = z.object({
+  action: z.string(),
+  params: z.any().optional(),
+});
 
-  fastify.get("/status", async (request, reply) => {
-    return reply.code(200).send({
-      status: "idle",
-      currentTask: null
+router.post("/execute", async (req: Request, res: Response) => {
+  try {
+    const { action, params } = executeSchema.parse(req.body);
+    res.json({
+      status: "success",
+      action,
+      result: `Executed action ${action} successfully.`,
     });
+  } catch (error) {
+    res.status(400).json({ error: "Invalid agent command format" });
+  }
+});
+
+router.get("/status", async (req: Request, res: Response) => {
+  res.json({
+    status: "idle",
+    currentTask: null,
   });
-}
+});
+
+export default router;

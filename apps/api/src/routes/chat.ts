@@ -1,36 +1,80 @@
-import { FastifyInstance } from "fastify";
+import { Router, Request, Response } from "express";
 import { z } from "zod";
+import { openaiClient, DEFAULT_MODEL } from "../services/openai/client.js";
 
-const messageSchema = z.object({
-  content: z.string(),
-  conversationId: z.string().uuid().optional(),
+const router = Router();
+
+const chatSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(["user", "assistant", "system"]),
+    content: z.string(),
+  })),
+  model: z.string().optional(),
 });
 
-export default async function chatRoutes(fastify: FastifyInstance) {
-  fastify.post("/send", async (request, reply) => {
-    try {
-      const parsed = messageSchema.parse(request.body);
-      // Fungsional: Mengirim pesan kembali sebagai echo dasar untuk API
-      return reply.code(200).send({
-        status: "success",
-        data: {
-          content: `Echo: ${parsed.content}`,
-          conversationId: parsed.conversationId || "new-conversation-id",
-        }
-      });
-    } catch (error) {
-      return reply.code(400).send({ error: "Invalid chat payload" });
-    }
-  });
+// Regular chat completion
+router.post("/send", async (req: Request, res: Response) => {
+  try {
+    const { messages, model } = chatSchema.parse(req.body);
 
-  fastify.get("/history/:conversationId", async (request, reply) => {
-    const { conversationId } = request.params as { conversationId: string };
-    return reply.code(200).send({
-      status: "success",
-      data: [
-        { role: "user", content: "Hello" },
-        { role: "assistant", content: "Hi! I am BOBA AGENT." }
-      ]
+    const completion = await openaiClient.chat.completions.create({
+      model: model || DEFAULT_MODEL,
+      messages,
     });
+
+    res.json({
+      status: "success",
+      data: completion.choices[0]?.message || { role: "assistant", content: "No response" },
+      usage: completion.usage,
+    });
+  } catch (error: any) {
+    console.error("Chat error:", error);
+    res.status(500).json({ error: error.message || "Chat request failed" });
+  }
+});
+
+// Streaming chat completion (SSE)
+router.post("/stream", async (req: Request, res: Response) => {
+  try {
+    const { messages, model } = chatSchema.parse(req.body);
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+
+    const stream = await openaiClient.chat.completions.create({
+      model: model || DEFAULT_MODEL,
+      messages,
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || "";
+      if (content) {
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
+
+    res.write(`data: [DONE]\n\n`);
+    res.end();
+  } catch (error: any) {
+    console.error("Stream error:", error);
+    res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+    res.end();
+  }
+});
+
+// Chat history (placeholder)
+router.get("/history/:conversationId", async (req: Request, res: Response) => {
+  const { conversationId } = req.params;
+  res.json({
+    status: "success",
+    data: [
+      { role: "user", content: "Hello" },
+      { role: "assistant", content: "Hi! I am BOBA AGENT." },
+    ],
   });
-}
+});
+
+export default router;

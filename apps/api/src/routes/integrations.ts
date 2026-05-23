@@ -1,41 +1,21 @@
-import { FastifyInstance } from "fastify";
-import { getAuthUrl, getTokens } from "../services/google/auth";
-import { z } from "zod";
+import { Router, Request, Response } from "express";
 
-export default async function integrationsRoutes(fastify: FastifyInstance) {
-  fastify.get("/google/url", async (request, reply) => {
-    try {
-      const url = getAuthUrl();
-      return reply.code(200).send({ url });
-    } catch (error) {
-      return reply.code(500).send({ error: "Failed to generate Google Auth URL" });
-    }
+const router = Router();
+
+router.get("/status", async (req: Request, res: Response) => {
+  res.json({
+    google: false,
+    telegram: false,
+    whatsapp: false,
   });
+});
 
-  fastify.post("/google/callback", async (request, reply) => {
-    const callbackSchema = z.object({
-      code: z.string(),
-    });
-
-    try {
-      const { code } = callbackSchema.parse(request.body);
-      const tokens = await getTokens(code);
-      
-      // Secara fungsional kita mengembalikan token
-      return reply.code(200).send({ 
-        message: "Google connected successfully",
-        tokens
-      });
-    } catch (error) {
-       return reply.code(400).send({ error: "Invalid callback data" });
-    }
+router.post("/connect/:service", async (req: Request, res: Response) => {
+  const { service } = req.params;
+  res.json({
+    status: "success",
+    message: `Connection flow for ${service} initiated.`,
   });
+});
 
-  fastify.get("/status", async (request, reply) => {
-    return reply.code(200).send({
-      google: false,
-      telegram: false,
-      whatsapp: false
-    });
-  });
-}
+export default router;

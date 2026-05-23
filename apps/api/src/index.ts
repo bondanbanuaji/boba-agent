@@ -1,60 +1,42 @@
-import Fastify from "fastify";
-import cors from "@fastify/cors";
-import helmet from "@fastify/helmet";
-import rateLimit from "@fastify/rate-limit";
-import fastifyJwt from "@fastify/jwt";
-import fastifyCookie from "@fastify/cookie";
-import fastifyMultipart from "@fastify/multipart";
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
+
+import chatRoutes from "./routes/chat.js";
+import authRoutes from "./routes/auth.js";
+import agentRoutes from "./routes/agent.js";
+import integrationsRoutes from "./routes/integrations.js";
 
 dotenv.config();
 
-const server = Fastify({
-  logger: true,
-});
+const app = express();
+const PORT = parseInt(process.env.PORT || "3001");
 
-server.register(cors, {
+// Middleware
+app.use(cors({
   origin: process.env.FRONTEND_URL || "*",
-});
-server.register(helmet);
-server.register(rateLimit, {
+  credentials: true,
+}));
+app.use(helmet());
+app.use(express.json());
+app.use(rateLimit({
+  windowMs: 60 * 1000,
   max: 100,
-  timeWindow: "1 minute",
-});
-server.register(fastifyJwt, {
-  secret: process.env.JWT_SECRET || "supersecret",
-});
-server.register(fastifyCookie);
-server.register(fastifyMultipart);
+}));
 
-import authRoutes from "./routes/auth";
-import chatRoutes from "./routes/chat";
-import agentRoutes from "./routes/agent";
-import integrationsRoutes from "./routes/integrations";
-import whatsappRoutes from "./routes/integrations/whatsapp";
-import webhookRoutes from "./routes/webhooks/telegram";
+// Routes
+app.use("/api/chat", chatRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/agent", agentRoutes);
+app.use("/api/integrations", integrationsRoutes);
 
-// Register Functional Routes
-server.register(authRoutes, { prefix: "/api/auth" });
-server.register(chatRoutes, { prefix: "/api/chat" });
-server.register(agentRoutes, { prefix: "/api/agent" });
-server.register(integrationsRoutes, { prefix: "/api/integrations" });
-server.register(whatsappRoutes, { prefix: "/api/integrations" });
-server.register(webhookRoutes, { prefix: "/api/webhooks" });
-
-server.get("/health", async (request, reply) => {
-  return { status: "ok", service: "BOBA-AGENT API" };
+// Health check
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", service: "BOBA-AGENT API", framework: "Express" });
 });
 
-const start = async () => {
-  try {
-    const port = parseInt(process.env.PORT || "3001");
-    await server.listen({ port, host: "0.0.0.0" });
-    console.log(`Server listening on port ${port}`);
-  } catch (err) {
-    server.log.error(err);
-    process.exit(1);
-  }
-};
-
-start();
+app.listen(PORT, () => {
+  console.log(`🚀 BOBA-AGENT API running on port ${PORT}`);
+});
