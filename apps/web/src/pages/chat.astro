@@ -1,0 +1,36 @@
+---
+// Chat Interface
+---
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Chat - BOBA AGENT</title>
+	</head>
+	<body class="bg-slate-900 text-white">
+		<div class="flex h-screen">
+            <aside class="w-64 bg-slate-800 p-4">
+                <h1 class="text-xl font-bold mb-4">BOBA AGENT</h1>
+                <nav class="flex flex-col gap-2">
+                    <a href="/chat" class="p-2 bg-blue-600 rounded">Chat</a>
+                    <a href="/dashboard" class="p-2 hover:bg-slate-700 rounded">Dashboard</a>
+                    <a href="/integrations" class="p-2 hover:bg-slate-700 rounded">Integrations</a>
+                    <a href="/logs" class="p-2 hover:bg-slate-700 rounded">Logs</a>
+                    <a href="/settings" class="p-2 hover:bg-slate-700 rounded">Settings</a>
+                </nav>
+            </aside>
+            <main class="flex-1 flex flex-col p-4">
+                <div class="flex-1 border border-slate-700 rounded bg-slate-800 p-4 mb-4 overflow-y-auto">
+                    {/* Chat messages will appear here */}
+                    <p class="text-slate-400">Welcome to BOBA AGENT. How can I help you today?</p>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" class="flex-1 p-2 bg-slate-700 rounded border border-slate-600" placeholder="Type a command..." />
+                    <button class="bg-blue-600 px-4 py-2 rounded font-bold">Send</button>
+                </div>
+            </main>
+        </div>
+	</body>
+</html>

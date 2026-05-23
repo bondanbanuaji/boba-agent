@@ -1,0 +1,36 @@
+---
+// Integrations Page
+---
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Integrations - BOBA AGENT</title>
+	</head>
+	<body class="bg-slate-900 text-white p-8">
+        <h1 class="text-3xl font-bold mb-8">Integrations</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Google Workspace -->
+            <div class="bg-slate-800 p-6 rounded-lg border border-slate-700">
+                <h2 class="text-xl font-bold mb-2">Google Workspace</h2>
+                <p class="text-slate-400 mb-4">Connect Drive, Docs, Sheets, Gmail, and Calendar.</p>
+                <button class="bg-blue-600 px-4 py-2 rounded font-bold w-full">Connect Google</button>
+            </div>
+            <!-- Telegram -->
+            <div class="bg-slate-800 p-6 rounded-lg border border-slate-700">
+                <h2 class="text-xl font-bold mb-2">Telegram</h2>
+                <p class="text-slate-400 mb-4">Connect your Telegram bot or user account.</p>
+                <button class="bg-blue-500 px-4 py-2 rounded font-bold w-full">Connect Telegram</button>
+            </div>
+            <!-- WhatsApp -->
+            <div class="bg-slate-800 p-6 rounded-lg border border-slate-700">
+                <h2 class="text-xl font-bold mb-2">WhatsApp</h2>
+                <p class="text-slate-400 mb-4">Scan QR code to connect WhatsApp.</p>
+                <button class="bg-green-600 px-4 py-2 rounded font-bold w-full">Connect WhatsApp</button>
+            </div>
+        </div>
+        <a href="/chat" class="block mt-8 text-blue-400 hover:underline">&larr; Back to Chat</a>
+	</body>
+</html>
