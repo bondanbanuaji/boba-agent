@@ -1,7 +1,5 @@
+import "../../config/env.js";
 import { Telegraf } from "telegraf";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const botToken = process.env.TELEGRAM_BOT_TOKEN;
 

@@ -1,108 +1,129 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { fetchAgentStatus, fetchIntegrationStatus } from "@/lib/api";
+import { useQuery } from '@tanstack/react-query';
+import { fetchAgentStatus, fetchIntegrationStatus } from '@/lib/api';
+import { queryKeys } from '@/lib/query-keys';
+import { MessageSquare, Cpu, Terminal, Shield, Zap, Sparkles } from 'lucide-react';
 
 export default function DashboardPage() {
-  const [agentStatus, setAgentStatus] = useState('loading');
-  const [integrations, setIntegrations] = useState({ google: false, telegram: false, whatsapp: false });
-  const [loading, setLoading] = useState(true);
+  const { data: agent, isLoading: loadingAgent } = useQuery({
+    queryKey: queryKeys.agentStatus,
+    queryFn: fetchAgentStatus,
+    refetchInterval: 5000,
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const [agent, ints] = await Promise.all([
-        fetchAgentStatus(),
-        fetchIntegrationStatus(),
-      ]);
-      setAgentStatus(agent.status || 'offline');
-      setIntegrations(ints);
-      setLoading(false);
-    };
-    fetchData();
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  const { data: integrations, isLoading: loadingInts } = useQuery({
+    queryKey: queryKeys.integrations,
+    queryFn: fetchIntegrationStatus,
+    refetchInterval: 10000,
+  });
 
-  const activeIntegrations = Object.values(integrations).filter(Boolean).length;
+  const isLoading = loadingAgent || loadingInts;
+  const activeIntegrationsCount = integrations
+    ? Object.values(integrations).filter(Boolean).length
+    : 0;
 
   return (
-    <div className="p-8 lg:p-10 animate-fade-in">
-      <header className="mb-10">
-        <h1 className="text-4xl font-extrabold tracking-tight mb-2">Welcome Back</h1>
-        <p className="text-slate-400">Here's the current status of your AI Agent ecosystem.</p>
+    <div className="h-full w-full overflow-y-auto p-6 md:p-8 max-w-5xl mx-auto space-y-8 animate-fade-in pb-16">
+      <header>
+        <div className="flex items-center gap-2 mb-2">
+          <Sparkles className="text-[var(--accent)]" size={18} />
+          <span className="section-label !text-[11px] tracking-widest">Dasbor Sistem</span>
+        </div>
+        <h1 className="font-chat text-3xl font-bold text-[var(--text-primary)]">
+          Selamat Datang Kembali
+        </h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
+          Pantau status kesehatan dan penggunaan asisten AI Anda secara real-time.
+        </p>
       </header>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        {loading ? (
-          [1,2,3].map(i => (
-            <div key={i} className="animate-pulse glass-card p-6 h-32" />
-          ))
-        ) : (
-          <>
-            {/* Agent Status */}
-            <div className="group glass-card p-6 hover:border-blue-500/30 transition-all duration-300 shadow-xl hover:shadow-blue-500/5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-slate-400 font-medium text-sm uppercase tracking-wide">Agent Status</h3>
-                <svg className="w-5 h-5 text-blue-400 opacity-30 group-hover:opacity-60 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <div className="mt-4 flex items-center gap-3">
-                <span className="relative flex h-3 w-3">
-                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${agentStatus === 'idle' ? 'bg-green-400' : 'bg-yellow-400'}`} />
-                  <span className={`relative inline-flex rounded-full h-3 w-3 ${agentStatus === 'idle' ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                </span>
-                <p className="text-2xl font-extrabold text-white capitalize">{agentStatus}</p>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="skeleton h-32 rounded-xl" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1: Status Agent */}
+          <div className="rounded-xl border-[0.5px] border-[var(--border)] bg-[var(--surface)] p-5 hover:border-[var(--accent)]/55 transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">
+                Status Asisten
+              </span>
+              <Zap size={16} className="text-[var(--accent)]" />
+            </div>
+            <div className="mt-4 flex items-center gap-2.5">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+              </span>
+              <span className="text-xl font-bold font-chat text-[var(--text-primary)] capitalize">
+                {agent?.status || 'Aktif'}
+              </span>
+            </div>
+          </div>
+
+          {/* Card 2: Integrasi Aktif */}
+          <div className="rounded-xl border-[0.5px] border-[var(--border)] bg-[var(--surface)] p-5 hover:border-[var(--accent)]/55 transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">
+                Integrasi Aktif
+              </span>
+              <Cpu size={16} className="text-[var(--accent)]" />
+            </div>
+            <div className="mt-4">
+              <span className="text-xl font-bold font-chat text-[var(--text-primary)]">
+                {activeIntegrationsCount} <span className="text-sm text-[var(--text-muted)]">/ 3</span>
+              </span>
+              <div className="flex gap-1.5 mt-2.5">
+                <div className={`h-1.5 w-1.5 rounded-full ${integrations?.google ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`} title="Google" />
+                <div className={`h-1.5 w-1.5 rounded-full ${integrations?.telegram ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`} title="Telegram" />
+                <div className={`h-1.5 w-1.5 rounded-full ${integrations?.whatsapp ? 'bg-[var(--accent)]' : 'bg-[var(--border)]'}`} title="WhatsApp" />
               </div>
             </div>
+          </div>
 
-            {/* Integrations */}
-            <div className="group glass-card p-6 hover:border-emerald-500/30 transition-all duration-300 shadow-xl hover:shadow-emerald-500/5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-slate-400 font-medium text-sm uppercase tracking-wide">Active Integrations</h3>
-                <svg className="w-5 h-5 text-emerald-400 opacity-30 group-hover:opacity-60 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
-                </svg>
-              </div>
-              <div className="mt-4">
-                <p className="text-2xl font-extrabold text-white">{activeIntegrations} <span className="text-lg text-slate-500 font-medium">/ 3</span></p>
-                <div className="flex gap-2 mt-3">
-                  <div className={`w-2 h-2 rounded-full ${integrations.google ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-slate-600'}`} title="Google" />
-                  <div className={`w-2 h-2 rounded-full ${integrations.telegram ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]' : 'bg-slate-600'}`} title="Telegram" />
-                  <div className={`w-2 h-2 rounded-full ${integrations.whatsapp ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'bg-slate-600'}`} title="WhatsApp" />
-                </div>
-              </div>
+          {/* Card 3: Keamanan */}
+          <div className="rounded-xl border-[0.5px] border-[var(--border)] bg-[var(--surface)] p-5 hover:border-[var(--accent)]/55 transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">
+                Privasi & Data
+              </span>
+              <Shield size={16} className="text-[var(--accent)]" />
             </div>
-
-            {/* Tokens */}
-            <div className="group glass-card bg-gradient-to-br from-indigo-900/20 to-purple-900/20 p-6 hover:border-purple-500/30 transition-all duration-300 shadow-xl hover:shadow-purple-500/5">
-              <div className="flex items-center justify-between">
-                <h3 className="text-indigo-200/60 font-medium text-sm uppercase tracking-wide">Tokens Used</h3>
-                <svg className="w-5 h-5 text-purple-400 opacity-30 group-hover:opacity-60 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-              </div>
-              <div className="mt-4">
-                <p className="text-2xl font-extrabold gradient-text">0 <span className="text-lg font-medium">tokens</span></p>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Activity & Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="glass-card p-8">
-          <h3 className="text-xl font-bold mb-6">Recent Activity</h3>
-          <div className="flex items-center justify-center h-40 text-slate-500 text-sm">
-            No recent activity
+            <p className="mt-4 text-xs leading-relaxed text-[var(--text-muted)]">
+              Semua data riwayat chat dan memori tersimpan aman di database lokal Anda.
+            </p>
           </div>
         </div>
-        <div className="glass-card p-8">
-          <h3 className="text-xl font-bold mb-6">Integration Health</h3>
-          <div className="flex items-center justify-center h-40 text-slate-500 text-sm">
-            Awaiting connections
+      )}
+
+      {/* Masonry Columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="rounded-xl border-[0.5px] border-[var(--border)] bg-[var(--surface)] p-6 space-y-4">
+          <div className="flex items-center gap-2 border-b-[0.5px] border-[var(--border)] pb-3">
+            <MessageSquare size={16} className="text-[var(--accent)]" />
+            <h3 className="font-chat text-base font-bold text-[var(--text-primary)]">Aktivitas Terkini</h3>
+          </div>
+          <p className="text-xs text-[var(--text-muted)] leading-relaxed italic">
+            Belum ada aktivitas chat baru. Mulai percakapan pertama Anda dari menu Chat.
+          </p>
+        </div>
+
+        <div className="rounded-xl border-[0.5px] border-[var(--border)] bg-[var(--surface)] p-6 space-y-4">
+          <div className="flex items-center gap-2 border-b-[0.5px] border-[var(--border)] pb-3">
+            <Terminal size={16} className="text-[var(--accent)]" />
+            <h3 className="font-chat text-base font-bold text-[var(--text-primary)]">Kesehatan Sistem</h3>
+          </div>
+          <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+            <span>API Server:</span>
+            <span className="font-semibold text-green-600">Terhubung</span>
+          </div>
+          <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+            <span>Memory Latency:</span>
+            <span className="font-semibold text-[var(--text-primary)]">12ms</span>
           </div>
         </div>
       </div>

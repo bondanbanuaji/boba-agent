@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
+import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "BOBA AGENT - AI Command Center",
-  description: "Personal AI Command Center. Control your entire digital ecosystem through natural language.",
+  title: "BobaAgent — Asisten AI Pribadi",
+  description: "Asisten AI yang ngerti konteks, bukan cuma jawab.",
   icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-slate-950 text-slate-100 min-h-screen antialiased">
-        {children}
+    <html lang="id" suppressHydrationWarning>
+      <body className="min-h-screen antialiased">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

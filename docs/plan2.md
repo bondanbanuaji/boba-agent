@@ -234,7 +234,7 @@ OPENAI_API_KEY=sk-xxxxxxxx
 
 OPENAI_BASE_URL=http://localhost:20128/v1
 
-DEFAULT_MODEL=nvidia/meta/llama-3.3-70b-instruct
+DEFAULT_MODEL=meta-llama/llama-3.3-70b-instruct
 ```
 
 ---

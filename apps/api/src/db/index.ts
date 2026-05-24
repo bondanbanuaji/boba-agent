@@ -1,9 +1,7 @@
+import "../config/env.js";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import * as schema from "./schema";
-import dotenv from "dotenv";
-
-dotenv.config();
+import * as schema from "./schema.js";
 
 const connectionString = process.env.DATABASE_URL || "postgresql://postgres:password@localhost:5432/postgres";
 

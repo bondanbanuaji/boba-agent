@@ -135,7 +135,7 @@ Frontend render markdown, log aksi, update UI
 
 ### AI Models
 ```
-GEMINI_MODEL_PRIMARY="gemini-2.5-flash"
+GEMINI_MODEL_PRIMARY="gemini-1.5-flash"
 GEMINI_MODEL_SECONDARY="gemini-2.0-flash"  
 GEMINI_MODEL_FAST="gemini-flash-latest"
 ```
@@ -562,7 +562,7 @@ REKOMENDASI: Mulai dengan Baileys untuk MVP, migrate ke WATI untuk production
 ```
 SETUP:
 - API_KEY dari Google AI Studio
-- Model: gemini-2.5-flash (primary)
+- Model: gemini-1.5-flash (primary)
 - Gunakan Function Calling feature
 - Definisikan semua tools sebagai function declarations
 - Gemini akan otomatis pilih tool yang dibutuhkan
@@ -938,7 +938,7 @@ JWT_REFRESH_SECRET=
 
 # Gemini AI
 GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-1.5-flash
 
 # Google OAuth
 GOOGLE_CLIENT_ID=

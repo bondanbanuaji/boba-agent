@@ -64,17 +64,23 @@ Aplikasi butuh tahu password database-mu dan API key (kunci rahasia) buat nyambu
 
 ---
 
-## 🗄️ 5. Bikin Ruang Penyimpanan (Database)
+## 🗄️ 5. Bikin Ruang Penyimpanan (Database dengan Supabase)
 
-Kita perlu bikinin "ruangan" kosong di PostgreSQL buat nyimpen data aplikasinya.
+Kita akan pakai **Supabase**, yaitu database PostgreSQL gratis di awan (cloud), biar komputermu nggak berat.
 
-1. Buka aplikasi **pgAdmin** atau terminal psql bawaan PostgreSQL.
-2. Bikin database baru, kasih nama: `boba_agent`.
-3. Kalau udah, buka terminal di folder `apps/api` dan ketik:
+1. Buka website [Supabase](https://supabase.com/) dan login (bisa pakai akun GitHub/Google).
+2. Klik tombol **"New Project"**, kasih nama bebas (misalnya `boba-agent-db`).
+3. Tunggu sebentar sampai database-nya siap (biasanya 1-2 menit).
+4. Kalau udah siap, masuk ke pengaturan: **Settings → Database**.
+5. Cari bagian **"Connection string"** (pilih tab URI). Copy tulisan panjang di situ.
+6. Buka file `.env` di folder `apps/api` yang tadi, lalu hapus `DATABASE_URL` yang lama, dan *paste* tulisan panjang dari Supabase tadi. Jangan lupa ganti bagian `[password]` dengan password yang kamu bikin pas buat project tadi.
+   Contohnya bakal jadi kayak gini:
+   `DATABASE_URL=postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres`
+7. Terakhir, buka terminal di folder `apps/api` dan ketik:
    ```bash
    npx drizzle-kit push
    ```
-   *Perintah ini ibarat nyuruh asisten buat ngerapiin struktur tabel di dalam ruangan database yang baru kita bikin.*
+   *Perintah ini ibarat nyuruh asisten buat nyiapin meja dan lemari (tabel) di dalam ruangan database barumu.*
 
 ---
 

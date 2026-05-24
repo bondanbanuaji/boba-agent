@@ -4,124 +4,119 @@ export interface Message {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
+  rawContent?: {
+    imageUrl?: string;
+  } | null;
   timestamp: number;
   status?: 'sending' | 'streaming' | 'done' | 'error';
 }
 
-export interface Conversation {
+export interface ChatSession {
   id: string;
   title: string;
-  messages: Message[];
   createdAt: number;
 }
 
 interface ChatState {
-  conversations: Conversation[];
-  activeConversationId: string | null;
+  sessions: ChatSession[];
+  messages: Record<string, Message[]>;
+  activeSessionId: string | null;
+  isLoading: boolean;
   isStreaming: boolean;
 
-  // Getters
-  getActiveConversation: () => Conversation | undefined;
-  getActiveMessages: () => Message[];
-
-  // Actions
-  createConversation: () => string;
-  setActiveConversation: (id: string) => void;
-  addMessage: (msg: Message) => void;
-  appendToLastMessage: (chunk: string) => void;
-  updateMessageStatus: (id: string, status: Message['status']) => void;
+  setSessions: (sessions: ChatSession[]) => void;
+  setMessages: (sessionId: string, messages: Message[]) => void;
+  setActiveSessionId: (id: string | null) => void;
+  createSession: (title?: string) => string;
+  deleteSession: (id: string) => void;
+  updateSessionTitle: (id: string, title: string) => void;
+  addMessage: (sessionId: string, message: Message) => void;
+  updateLastMessage: (sessionId: string, update: Partial<Message>) => void;
+  setLoading: (loading: boolean) => void;
   setStreaming: (streaming: boolean) => void;
-  deleteConversation: (id: string) => void;
-  clearAll: () => void;
 }
 
-export const useChatStore = create<ChatState>((set, get) => ({
-  conversations: [],
-  activeConversationId: null,
+export const useChatStore = create<ChatState>((set) => ({
+  sessions: [],
+  messages: {},
+  activeSessionId: null,
+  isLoading: false,
   isStreaming: false,
 
-  getActiveConversation: () => {
-    const state = get();
-    return state.conversations.find(c => c.id === state.activeConversationId);
-  },
+  setSessions: (sessions) => set({ sessions }),
+  
+  setMessages: (sessionId, msgs) =>
+    set((state) => ({
+      messages: { ...state.messages, [sessionId]: msgs },
+    })),
 
-  getActiveMessages: () => {
-    const conv = get().getActiveConversation();
-    return conv?.messages || [];
-  },
+  setActiveSessionId: (id) => set({ activeSessionId: id }),
 
-  createConversation: () => {
+  createSession: (title = 'Obrolan Baru') => {
     const id = crypto.randomUUID();
-    const conv: Conversation = {
+    const newSession: ChatSession = {
       id,
-      title: 'New Chat',
-      messages: [],
+      title,
       createdAt: Date.now(),
     };
-    set(state => ({
-      conversations: [conv, ...state.conversations],
-      activeConversationId: id,
+    set((state) => ({
+      sessions: [newSession, ...state.sessions],
+      messages: { ...state.messages, [id]: [] },
+      activeSessionId: id,
     }));
     return id;
   },
 
-  setActiveConversation: (id) => set({ activeConversationId: id }),
+  deleteSession: (id) =>
+    set((state) => {
+      const { [id]: _, ...remainingMessages } = state.messages;
+      const remainingSessions = state.sessions.filter((s) => s.id !== id);
+      const nextActiveId =
+        state.activeSessionId === id
+          ? remainingSessions[0]?.id || null
+          : state.activeSessionId;
 
-  addMessage: (msg) => set(state => {
-    const convId = state.activeConversationId;
-    if (!convId) return state;
-    return {
-      conversations: state.conversations.map(c =>
-        c.id === convId
-          ? {
-              ...c,
-              messages: [...c.messages, msg],
-              title: c.messages.length === 0 && msg.role === 'user'
-                ? msg.content.slice(0, 40) + (msg.content.length > 40 ? '...' : '')
-                : c.title,
-            }
-          : c
-      ),
-    };
-  }),
+      return {
+        sessions: remainingSessions,
+        messages: remainingMessages,
+        activeSessionId: nextActiveId,
+      };
+    }),
 
-  appendToLastMessage: (chunk) => set(state => {
-    const convId = state.activeConversationId;
-    if (!convId) return state;
-    return {
-      conversations: state.conversations.map(c =>
-        c.id === convId
-          ? {
-              ...c,
-              messages: c.messages.map((m, i) =>
-                i === c.messages.length - 1
-                  ? { ...m, content: m.content + chunk }
-                  : m
-              ),
-            }
-          : c
-      ),
-    };
-  }),
-
-  updateMessageStatus: (id, status) => set(state => ({
-    conversations: state.conversations.map(c => ({
-      ...c,
-      messages: c.messages.map(m => m.id === id ? { ...m, status } : m),
+  updateSessionTitle: (id, title) =>
+    set((state) => ({
+      sessions: state.sessions.map((s) => (s.id === id ? { ...s, title } : s)),
     })),
-  })),
 
+  addMessage: (sessionId, message) =>
+    set((state) => {
+      const currentMessages = state.messages[sessionId] || [];
+      return {
+        messages: {
+          ...state.messages,
+          [sessionId]: [...currentMessages, message],
+        },
+      };
+    }),
+
+  updateLastMessage: (sessionId, update) =>
+    set((state) => {
+      const currentMessages = state.messages[sessionId] || [];
+      if (currentMessages.length === 0) return {};
+      const lastIndex = currentMessages.length - 1;
+      const updatedMessages = [...currentMessages];
+      updatedMessages[lastIndex] = {
+        ...updatedMessages[lastIndex],
+        ...update,
+      };
+      return {
+        messages: {
+          ...state.messages,
+          [sessionId]: updatedMessages,
+        },
+      };
+    }),
+
+  setLoading: (loading) => set({ isLoading: loading }),
   setStreaming: (streaming) => set({ isStreaming: streaming }),
-
-  deleteConversation: (id) => set(state => {
-    const filtered = state.conversations.filter(c => c.id !== id);
-    return {
-      conversations: filtered,
-      activeConversationId: state.activeConversationId === id
-        ? (filtered[0]?.id || null)
-        : state.activeConversationId,
-    };
-  }),
-
-  clearAll: () => set({ conversations: [], activeConversationId: null }),
 }));

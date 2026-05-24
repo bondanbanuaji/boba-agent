@@ -1,76 +1,62 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { supabase } from './supabase';
 
-export async function sendChatMessage(messages: { role: string; content: string }[]) {
-  const res = await fetch(`${API_URL}/api/chat/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages }),
-  });
-  if (!res.ok) throw new Error('Chat request failed');
+const getBaseUrl = () => process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  const headers = new Headers(options.headers);
+  if (session?.access_token) {
+    headers.set('Authorization', `Bearer ${session.access_token}`);
+  }
+  if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const res = await fetch(`${getBaseUrl()}${endpoint}`, { ...options, headers });
+  
+  if (res.status === 401) {
+    await supabase.auth.signOut();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    throw new Error('Unauthorized');
+  }
+  
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(error.message || 'API Error');
+  }
+  
   return res.json();
 }
 
-export async function streamChatMessage(
-  messages: { role: string; content: string }[],
-  onChunk: (chunk: string) => void,
-  onDone: () => void,
-  onError: (error: string) => void,
-) {
-  try {
-    const res = await fetch(`${API_URL}/api/chat/stream`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages }),
-    });
+export const api = {
+  get: (endpoint: string, options?: Omit<RequestInit, 'method' | 'body'>) => 
+    fetchWithAuth(endpoint, { ...options, method: 'GET' }),
+    
+  post: (endpoint: string, body: any, options?: Omit<RequestInit, 'method' | 'body'>) => 
+    fetchWithAuth(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) }),
+    
+  put: (endpoint: string, body: any, options?: Omit<RequestInit, 'method' | 'body'>) => 
+    fetchWithAuth(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
+    
+  delete: (endpoint: string, options?: Omit<RequestInit, 'method' | 'body'>) => 
+    fetchWithAuth(endpoint, { ...options, method: 'DELETE' }),
+};
 
-    if (!res.ok) throw new Error('Stream request failed');
-
-    const reader = res.body?.getReader();
-    const decoder = new TextDecoder();
-
-    if (!reader) throw new Error('No reader available');
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const text = decoder.decode(value, { stream: true });
-      const lines = text.split('\n');
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') {
-            onDone();
-            return;
-          }
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.content) onChunk(parsed.content);
-            if (parsed.error) onError(parsed.error);
-          } catch {}
-        }
-      }
-    }
-    onDone();
-  } catch (error: any) {
-    onError(error.message);
-  }
-}
-
+// Typed specific API calls
 export async function fetchAgentStatus() {
   try {
-    const res = await fetch(`${API_URL}/api/agent/status`);
-    return res.json();
+    return await api.get('/api/agent/status');
   } catch {
-    return { status: 'disconnected' };
+    return { status: 'offline' };
   }
 }
 
 export async function fetchIntegrationStatus() {
   try {
-    const res = await fetch(`${API_URL}/api/integrations/status`);
-    return res.json();
+    return await api.get('/api/integrations/status');
   } catch {
     return { google: false, telegram: false, whatsapp: false };
   }
